@@ -1,0 +1,17 @@
+{
+  "name": "mastra-playground",
+  "private": true,
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter mastra --filter web dev",
+    "dev:mastra": "pnpm --filter mastra dev",
+    "dev:web": "pnpm --filter web dev",
+    "build": "pnpm --recursive build",
+    "typecheck": "pnpm --recursive --if-present typecheck",
+    "lint": "pnpm --recursive --if-present lint",
+    "format": "pnpm --recursive --if-present format"
+  }
+}

@@ -1,4 +1,5 @@
 import { Mastra } from '@mastra/core/mastra';
+import { chatRoute } from '@mastra/ai-sdk';
 import { LibSQLStore } from '@mastra/libsql';
 import { DuckDBStore } from '@mastra/duckdb';
 import { MastraCompositeStore } from '@mastra/core/storage';
@@ -10,6 +11,11 @@ import {
 } from '@mastra/observability';
 import { agent } from './agents/agent';
 import { startScheduleTool, stopScheduleTool } from './tools/schedule-tools';
+
+const webOrigins = (process.env.WEB_ORIGIN || 'http://localhost:3000')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
 
 export const mastra = new Mastra({
   bundler: {
@@ -37,4 +43,20 @@ export const mastra = new Mastra({
       },
     },
   }),
+  server: {
+    apiRoutes: [
+      chatRoute({
+        path: '/chat',
+        agent: 'agent',
+        version: 'v7',
+        heartbeatMs: 15_000,
+      }),
+    ],
+    cors: {
+      origin: webOrigins,
+      allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+      credentials: false,
+    },
+  },
 });

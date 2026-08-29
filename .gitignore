@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Environment files (keep templates)
+.env
+.env.*
+!.env.example
+
+# Build and framework output
+dist/
+dist-ssr/
+.output/
+.nitro/
+.tanstack/
+.vinxi/
+.mastra/
+coverage/
+
+# Local databases and runtime state
+*.db
+*.db-*
+*.duckdb
+*.duckdb.wal
+apps/mastra/workspace/
+apps/mastra/src/mastra/public/
+
+# Deployment tooling
+.netlify/
+.vercel/
+.wrangler/
+
+# Logs and local files
+*.log
+*.local
+output.txt
+todos.json
+
+# Editor and OS files
+.DS_Store
+*.swp
+*~

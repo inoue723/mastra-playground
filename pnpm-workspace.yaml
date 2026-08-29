@@ -1,11 +1,19 @@
 packages:
-  - '.'
+  - 'apps/*'
+
 minimumReleaseAgeExclude:
   - mastra
   - "@mastra/*"
+  - '@ai-sdk/gateway@4.0.68'
+  - '@ai-sdk/mcp@2.0.40'
+  - '@ai-sdk/provider-utils@5.0.33'
+  - '@ai-sdk/react@4.0.87'
+  - ai@7.0.84
+
 allowBuilds:
   bufferutil: true
   esbuild: true
+  lightningcss: true
   protobufjs: true
   sharp: true
   utf-8-validate: true
