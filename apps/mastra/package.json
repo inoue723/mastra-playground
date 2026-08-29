@@ -24,6 +24,7 @@
     "@mastra/libsql": "1.22.2",
     "@mastra/memory": "1.28.1",
     "@mastra/observability": "1.17.4",
+    "ai": "7.0.84",
     "zod": "^4.4.3"
   },
   "devDependencies": {

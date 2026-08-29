@@ -1,11 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { Link, createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { DefaultChatTransport, type UIMessage } from "ai";
 
 import { AGENT_ID, RESOURCE_ID, getBrowserMastraUrl } from "#/lib/chat";
-import { createThread, getChatData } from "#/lib/chat-functions";
+import { getChatData } from "#/lib/chat-functions";
 
 type Search = {
   thread?: string;
@@ -23,17 +22,11 @@ export const Route = createFileRoute("/")({
 function ChatPage() {
   const data = Route.useLoaderData();
   const navigate = useNavigate();
-  const createThreadFn = useServerFn(createThread);
-  const [isCreating, setIsCreating] = useState(false);
+  const [resetToken, setResetToken] = useState(0);
 
-  async function handleCreateThread() {
-    setIsCreating(true);
-    try {
-      const thread = await createThreadFn();
-      await navigate({ to: "/", search: { thread: thread.id } });
-    } finally {
-      setIsCreating(false);
-    }
+  async function handleNewChat() {
+    setResetToken((token) => token + 1);
+    await navigate({ to: "/", search: {} });
   }
 
   return (
@@ -44,13 +37,8 @@ function ChatPage() {
             <p className="eyebrow">Mastra</p>
             <h1>Agent chat</h1>
           </div>
-          <button
-            className="new-thread-button"
-            disabled={isCreating || Boolean(data.connectionError)}
-            onClick={handleCreateThread}
-            type="button"
-          >
-            {isCreating ? "Creating…" : "+ New"}
+          <button className="new-thread-button" onClick={handleNewChat} type="button">
+            + New
           </button>
         </div>
 
@@ -76,43 +64,77 @@ function ChatPage() {
       <section className="chat-column">
         {data.connectionError ? (
           <ConnectionError message={data.connectionError} />
-        ) : data.activeThreadId ? (
+        ) : (
           <Chat
             initialMessages={data.messages}
-            key={data.activeThreadId}
             threadId={data.activeThreadId}
+            resetToken={resetToken}
           />
-        ) : (
-          <EmptyChat onCreate={handleCreateThread} />
         )}
       </section>
     </main>
   );
 }
 
-function Chat({ initialMessages, threadId }: { initialMessages: UIMessage[]; threadId: string }) {
+function Chat({
+  initialMessages,
+  resetToken,
+  threadId,
+}: {
+  initialMessages: UIMessage[];
+  resetToken: number;
+  threadId?: string;
+}) {
   const router = useRouter();
+  const navigate = useNavigate();
   const [input, setInput] = useState("");
+  const threadIdRef = useRef(threadId);
+  const selfNavigationThreadIdRef = useRef<string | undefined>(undefined);
+  const navigateRef = useRef(navigate);
+
+  useEffect(() => {
+    navigateRef.current = navigate;
+  }, [navigate]);
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: `${getBrowserMastraUrl()}/chat`,
-        prepareSendMessagesRequest({ messages }) {
+        prepareSendMessagesRequest({ messages, trigger }) {
+          const messagesToSend =
+            trigger === "submit-message" && messages.at(-1)?.role === "user"
+              ? messages.slice(-1)
+              : messages;
           return {
             body: {
-              messages,
+              messages: messagesToSend,
               memory: {
                 resource: RESOURCE_ID,
-                thread: threadId,
+                ...(threadIdRef.current ? { thread: threadIdRef.current } : {}),
               },
             },
           };
         },
+        async fetch(url, init) {
+          const response = await globalThis.fetch(url, init);
+          const createdThreadId = response.headers.get("x-thread-id");
+
+          if (response.ok && createdThreadId && !threadIdRef.current) {
+            threadIdRef.current = createdThreadId;
+            selfNavigationThreadIdRef.current = createdThreadId;
+            void navigateRef.current({
+              to: "/",
+              search: { thread: createdThreadId },
+              replace: true,
+            });
+          }
+
+          return response;
+        },
       }),
-    [threadId],
+    [],
   );
-  const { error, messages, sendMessage, status, stop } = useChat({
-    id: threadId,
+  const { error, messages, sendMessage, setMessages, status, stop } = useChat({
     messages: initialMessages,
     transport,
     onFinish: () => {
@@ -120,6 +142,17 @@ function Chat({ initialMessages, threadId }: { initialMessages: UIMessage[]; thr
     },
   });
   const isBusy = status === "submitted" || status === "streaming";
+
+  useEffect(() => {
+    if (threadId && selfNavigationThreadIdRef.current === threadId) {
+      selfNavigationThreadIdRef.current = undefined;
+      return;
+    }
+
+    threadIdRef.current = threadId;
+    setMessages(initialMessages);
+    setInput("");
+  }, [initialMessages, resetToken, setMessages, threadId]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -134,7 +167,7 @@ function Chat({ initialMessages, threadId }: { initialMessages: UIMessage[]; thr
       <header className="chat-header">
         <div>
           <p className="eyebrow">Conversation</p>
-          <h2>{threadId.slice(0, 8)}</h2>
+          <h2>{threadId ? threadId.slice(0, 8) : "New conversation"}</h2>
         </div>
         <span className={`status-dot ${isBusy ? "is-busy" : ""}`}>
           {isBusy ? "Thinking" : "Ready"}
@@ -212,18 +245,6 @@ function Message({ message }: { message: UIMessage }) {
         })}
       </div>
     </article>
-  );
-}
-
-function EmptyChat({ onCreate }: { onCreate: () => Promise<void> }) {
-  return (
-    <div className="center-state">
-      <p className="eyebrow">No active conversation</p>
-      <h2>Create a thread to start chatting.</h2>
-      <button className="primary-button" onClick={() => void onCreate()} type="button">
-        New conversation
-      </button>
-    </div>
   );
 }
 

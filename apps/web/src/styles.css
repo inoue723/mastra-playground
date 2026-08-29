@@ -295,6 +295,7 @@ h1 {
   font-size: 13px;
 }
 .center-state {
+  grid-row: 2;
   align-self: center;
   padding: 32px;
 }

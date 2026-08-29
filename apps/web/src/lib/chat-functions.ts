@@ -50,7 +50,7 @@ export const getChatData = createServerFn({ method: "GET" })
       const activeThreadId =
         data.threadId && result.threads.some((thread) => thread.id === data.threadId)
           ? data.threadId
-          : result.threads[0]?.id;
+          : undefined;
       const storedMessages = activeThreadId
         ? await client.listThreadMessages(activeThreadId, { agentId: AGENT_ID })
         : { messages: [] };
@@ -76,13 +76,3 @@ export const getChatData = createServerFn({ method: "GET" })
       };
     }
   });
-
-export const createThread = createServerFn({ method: "POST" }).handler(async () => {
-  const client = createClient();
-  const thread = await client.createMemoryThread({
-    agentId: AGENT_ID,
-    resourceId: RESOURCE_ID,
-    threadId: crypto.randomUUID(),
-  });
-  return { id: thread.id };
-});
