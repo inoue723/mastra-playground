@@ -76,3 +76,13 @@ export const getChatData = createServerFn({ method: "GET" })
       };
     }
   });
+
+export const createThread = createServerFn({ method: "POST" }).handler(async () => {
+  const client = createClient();
+  const thread = await client.createMemoryThread({
+    agentId: AGENT_ID,
+    resourceId: RESOURCE_ID,
+  });
+
+  return { id: thread.id };
+});

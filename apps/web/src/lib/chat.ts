@@ -1,4 +1,5 @@
 export const AGENT_ID = "agent";
+export const PENDING_MESSAGE_PREFIX = "mastra-chat:pending:";
 export const RESOURCE_ID = "local-user";
 
 export function getBrowserMastraUrl() {
