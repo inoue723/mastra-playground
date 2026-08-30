@@ -18,6 +18,7 @@
     "node": ">=22.13.0"
   },
   "dependencies": {
+    "@clerk/backend": "^3.16.13",
     "@mastra/ai-sdk": "1.10.0",
     "@mastra/core": "1.63.2",
     "@mastra/duckdb": "1.6.3",

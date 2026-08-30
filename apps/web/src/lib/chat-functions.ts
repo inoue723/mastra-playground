@@ -1,9 +1,11 @@
+import { auth } from "@clerk/tanstack-react-start/server";
 import { MastraClient } from "@mastra/client-js";
 import { toAISdkMessages } from "@mastra/ai-sdk/ui";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { AGENT_ID, RESOURCE_ID } from "./chat";
+import { requireUserId } from "./auth";
+import { AGENT_ID } from "./chat";
 
 const threadInput = z.object({
   threadId: z.string().min(1).optional(),
@@ -13,9 +15,15 @@ const requiredThreadInput = z.object({
   threadId: z.string().min(1),
 });
 
-function createClient() {
+async function createClient() {
+  const { getToken } = await auth();
+  const token = await getToken();
+
+  if (!token) throw new Error("Your session has expired. Please sign in again.");
+
   return new MastraClient({
     baseUrl: process.env.MASTRA_API_URL || "http://localhost:4111",
+    headers: { Authorization: `Bearer ${token}` },
   });
 }
 
@@ -41,12 +49,13 @@ function toSerializableMessages(messages: ReturnType<typeof toAISdkMessages>) {
 export const getChatData = createServerFn({ method: "GET" })
   .validator(threadInput)
   .handler(async ({ data }) => {
-    const client = createClient();
+    const userId = await requireUserId();
+    const client = await createClient();
 
     try {
       const result = await client.listMemoryThreads({
         agentId: AGENT_ID,
-        resourceId: RESOURCE_ID,
+        resourceId: userId,
         page: 0,
         perPage: 100,
         orderBy: { field: "updatedAt", direction: "DESC" },
@@ -82,10 +91,11 @@ export const getChatData = createServerFn({ method: "GET" })
   });
 
 export const createThread = createServerFn({ method: "POST" }).handler(async () => {
-  const client = createClient();
+  const userId = await requireUserId();
+  const client = await createClient();
   const thread = await client.createMemoryThread({
     agentId: AGENT_ID,
-    resourceId: RESOURCE_ID,
+    resourceId: userId,
   });
 
   return { id: thread.id };
@@ -94,7 +104,19 @@ export const createThread = createServerFn({ method: "POST" }).handler(async () 
 export const getThreadTitle = createServerFn({ method: "GET" })
   .validator(requiredThreadInput)
   .handler(async ({ data }) => {
-    const client = createClient();
+    const userId = await requireUserId();
+    const client = await createClient();
+    const threads = await client.listMemoryThreads({
+      agentId: AGENT_ID,
+      resourceId: userId,
+      page: 0,
+      perPage: 100,
+    });
+
+    if (!threads.threads.some((thread) => thread.id === data.threadId)) {
+      throw new Error("Conversation not found.");
+    }
+
     const thread = await client
       .getMemoryThread({ threadId: data.threadId, agentId: AGENT_ID })
       .get();

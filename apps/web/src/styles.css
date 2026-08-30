@@ -59,6 +59,29 @@ p {
 .sidebar-header {
   padding: 0 6px 22px;
 }
+
+.auth-controls {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 1.25rem 1rem;
+}
+
+.auth-button {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.4rem 0.65rem;
+}
+
+.auth-button-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
 .eyebrow {
   margin: 0 0 5px;
   color: #8f9aac;

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useChat } from "@ai-sdk/react";
+import { useAuth } from "@clerk/tanstack-react-start";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { DefaultChatTransport, type UIMessage } from "ai";
 
-import { AGENT_ID, PENDING_MESSAGE_PREFIX, RESOURCE_ID, getBrowserMastraUrl } from "#/lib/chat";
+import { AGENT_ID, PENDING_MESSAGE_PREFIX, getBrowserMastraUrl } from "#/lib/chat";
 import { getThreadTitle } from "#/lib/chat-functions";
 
 const TITLE_POLL_ATTEMPTS = 5;
@@ -18,29 +19,34 @@ export function ThreadChat({
   threadId: string;
 }) {
   const router = useRouter();
+  const { getToken, userId } = useAuth();
   const getThreadTitleFn = useServerFn(getThreadTitle);
   const [input, setInput] = useState("");
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: `${getBrowserMastraUrl()}/chat`,
-        prepareSendMessagesRequest({ messages, trigger }) {
+        async prepareSendMessagesRequest({ messages, trigger }) {
+          const token = await getToken();
+          if (!token) throw new Error("Your session has expired. Please sign in again.");
+
           const messagesToSend =
             trigger === "submit-message" && messages.at(-1)?.role === "user"
               ? messages.slice(-1)
               : messages;
           return {
+            headers: { Authorization: `Bearer ${token}` },
             body: {
               messages: messagesToSend,
               memory: {
-                resource: RESOURCE_ID,
+                resource: userId,
                 thread: threadId,
               },
             },
           };
         },
       }),
-    [threadId],
+    [getToken, threadId, userId],
   );
   const { error, messages, sendMessage, status, stop } = useChat({
     id: threadId,

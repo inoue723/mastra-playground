@@ -1,5 +1,6 @@
 import { Mastra } from '@mastra/core/mastra';
 import { chatRoute } from '@mastra/ai-sdk';
+import { verifyToken } from '@clerk/backend';
 import { LibSQLStore } from '@mastra/libsql';
 import { DuckDBStore } from '@mastra/duckdb';
 import { MastraCompositeStore } from '@mastra/core/storage';
@@ -17,6 +18,12 @@ const webOrigins = (process.env.WEB_ORIGIN || 'http://localhost:3000')
   .split(',')
   .map(origin => origin.trim())
   .filter(Boolean);
+
+const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+
+if (!clerkSecretKey) {
+  throw new Error('CLERK_SECRET_KEY must be set before starting the Mastra server.');
+}
 
 export const mastra = new Mastra({
   bundler: {
@@ -45,6 +52,22 @@ export const mastra = new Mastra({
     },
   }),
   server: {
+    auth: {
+      protected: ['/*'],
+      authenticateToken: async token => {
+        try {
+          const verifiedToken = await verifyToken(token, {
+            authorizedParties: webOrigins,
+            secretKey: clerkSecretKey,
+          });
+
+          return verifiedToken.sub ? { id: verifiedToken.sub } : null;
+        } catch {
+          return null;
+        }
+      },
+      mapUserToResourceId: user => user.id,
+    },
     apiRoutes: [
       echoExampleRoute,
       chatRoute({

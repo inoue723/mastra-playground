@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/tanstack-react-start";
 import { Link } from "@tanstack/react-router";
 
 import type { getChatData } from "#/lib/chat-functions";
@@ -17,6 +18,24 @@ export function ChatLayout({ children, data }: { children: ReactNode; data: Chat
           <Link className="new-thread-button" to="/">
             + New
           </Link>
+        </div>
+
+        <div className="auth-controls">
+          <Show when="signed-out">
+            <SignInButton>
+              <button className="auth-button" type="button">
+                Sign in
+              </button>
+            </SignInButton>
+            <SignUpButton>
+              <button className="auth-button auth-button-primary" type="button">
+                Sign up
+              </button>
+            </SignUpButton>
+          </Show>
+          <Show when="signed-in">
+            <UserButton />
+          </Show>
         </div>
 
         <nav aria-label="Conversation threads" className="thread-list">
