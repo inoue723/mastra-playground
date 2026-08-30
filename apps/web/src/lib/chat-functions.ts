@@ -9,6 +9,10 @@ const threadInput = z.object({
   threadId: z.string().min(1).optional(),
 });
 
+const requiredThreadInput = z.object({
+  threadId: z.string().min(1),
+});
+
 function createClient() {
   return new MastraClient({
     baseUrl: process.env.MASTRA_API_URL || "http://localhost:4111",
@@ -86,3 +90,14 @@ export const createThread = createServerFn({ method: "POST" }).handler(async () 
 
   return { id: thread.id };
 });
+
+export const getThreadTitle = createServerFn({ method: "GET" })
+  .validator(requiredThreadInput)
+  .handler(async ({ data }) => {
+    const client = createClient();
+    const thread = await client
+      .getMemoryThread({ threadId: data.threadId, agentId: AGENT_ID })
+      .get();
+
+    return { title: thread.title };
+  });

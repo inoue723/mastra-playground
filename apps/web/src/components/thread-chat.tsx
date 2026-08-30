@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { DefaultChatTransport, type UIMessage } from "ai";
 
 import { AGENT_ID, PENDING_MESSAGE_PREFIX, RESOURCE_ID, getBrowserMastraUrl } from "#/lib/chat";
+import { getThreadTitle } from "#/lib/chat-functions";
+
+const TITLE_POLL_ATTEMPTS = 5;
+const TITLE_POLL_INTERVAL_MS = 2000;
 
 export function ThreadChat({
   initialMessages,
@@ -13,6 +18,7 @@ export function ThreadChat({
   threadId: string;
 }) {
   const router = useRouter();
+  const getThreadTitleFn = useServerFn(getThreadTitle);
   const [input, setInput] = useState("");
   const transport = useMemo(
     () =>
@@ -41,10 +47,24 @@ export function ThreadChat({
     messages: initialMessages,
     transport,
     onFinish: () => {
-      void router.invalidate();
+      void refreshGeneratedTitle();
     },
   });
   const isBusy = status === "submitted" || status === "streaming";
+
+  async function refreshGeneratedTitle() {
+    for (let attempt = 0; attempt < TITLE_POLL_ATTEMPTS; attempt += 1) {
+      try {
+        const result = await getThreadTitleFn({ data: { threadId } });
+        if (result.title) break;
+      } catch {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, TITLE_POLL_INTERVAL_MS));
+    }
+
+    await router.invalidate();
+  }
 
   useEffect(() => {
     const storageKey = `${PENDING_MESSAGE_PREFIX}${threadId}`;
