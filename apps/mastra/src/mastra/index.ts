@@ -10,6 +10,7 @@ import {
   SensitiveDataFilter,
 } from '@mastra/observability';
 import { agent } from './agents/agent';
+import { echoExampleRoute } from './routes/example-routes';
 import { startScheduleTool, stopScheduleTool } from './tools/schedule-tools';
 
 const webOrigins = (process.env.WEB_ORIGIN || 'http://localhost:3000')
@@ -45,6 +46,7 @@ export const mastra = new Mastra({
   }),
   server: {
     apiRoutes: [
+      echoExampleRoute,
       chatRoute({
         path: '/chat',
         agent: 'agent',

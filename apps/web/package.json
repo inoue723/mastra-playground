@@ -7,6 +7,8 @@
   },
   "scripts": {
     "dev": "vite dev --port 3000",
+    "generate:mastra-openapi": "node scripts/fetch-mastra-openapi.mjs",
+    "generate:mastra-client": "pnpm generate:mastra-openapi && openapi-ts --input ./openapi/mastra-client.openapi.json --output ./src/lib/generated/mastra-api --client @hey-api/client-fetch && oxfmt --write openapi/mastra-client.openapi.json src/lib/generated/mastra-api",
     "generate-routes": "tsr generate",
     "build": "vite build",
     "start": "node dist/server/server.js",
@@ -30,6 +32,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "^0.99.0",
     "@tanstack/router-cli": "^1.132.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.0",
