@@ -4,6 +4,8 @@ import { useAuth } from "@clerk/tanstack-react-start";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { DefaultChatTransport, type UIMessage } from "ai";
+import { code } from "@streamdown/code";
+import { Streamdown } from "streamdown";
 
 import { AGENT_ID, PENDING_MESSAGE_PREFIX, getBrowserMastraUrl } from "#/lib/chat";
 import { getThreadTitle } from "#/lib/chat-functions";
@@ -158,13 +160,17 @@ function Message({ message }: { message: UIMessage }) {
       <div className="message-content">
         {message.parts.map((part, index) => {
           if (part.type === "text") {
-            return <p key={`${message.id}-${index}`}>{part.text}</p>;
+            return (
+              <Streamdown key={`${message.id}-${index}`} plugins={{ code }}>
+                {part.text}
+              </Streamdown>
+            );
           }
           if (part.type === "reasoning") {
             return (
               <details key={`${message.id}-${index}`}>
                 <summary>Reasoning</summary>
-                <p>{part.text}</p>
+                <Streamdown plugins={{ code }}>{part.text}</Streamdown>
               </details>
             );
           }
