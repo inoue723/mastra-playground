@@ -1,6 +1,5 @@
 import { Mastra } from '@mastra/core/mastra';
 import { chatRoute } from '@mastra/ai-sdk';
-import { verifyToken } from '@clerk/backend';
 import { PostgresStore } from '@mastra/pg';
 import { DuckDBStore } from '@mastra/duckdb';
 import { MastraCompositeStore } from '@mastra/core/storage';
@@ -11,6 +10,7 @@ import {
   SensitiveDataFilter,
 } from '@mastra/observability';
 import { agent } from './agents/agent';
+import { createClerkMiddleware } from './auth/clerk';
 import { echoExampleRoute } from './routes/example-routes';
 import { startScheduleTool, stopScheduleTool } from './tools/schedule-tools';
 
@@ -29,6 +29,8 @@ if (!clerkSecretKey) {
 if (!databaseUrl) {
   throw new Error('DATABASE_URL must be set before starting the Mastra server.');
 }
+
+const clerkMiddleware = createClerkMiddleware(clerkSecretKey, webOrigins);
 
 export const mastra = new Mastra({
   bundler: {
@@ -56,22 +58,11 @@ export const mastra = new Mastra({
     },
   }),
   server: {
-    auth: {
-      protected: ['/*'],
-      authenticateToken: async token => {
-        try {
-          const verifiedToken = await verifyToken(token, {
-            authorizedParties: webOrigins,
-            secretKey: clerkSecretKey,
-          });
-
-          return verifiedToken.sub ? { id: verifiedToken.sub } : null;
-        } catch {
-          return null;
-        }
-      },
-      mapUserToResourceId: user => user.id,
-    },
+    host: '127.0.0.1',
+    middleware: [
+      { path: '/chat', handler: clerkMiddleware },
+      { path: '/examples/*', handler: clerkMiddleware },
+    ],
     apiRoutes: [
       echoExampleRoute,
       chatRoute({

@@ -24,6 +24,8 @@ pnpm run dev
 
 Open [http://localhost:4111](http://localhost:4111) in your browser to access [Mastra Studio](https://mastra.ai/docs/studio/overview).
 
+The Mastra server binds to `127.0.0.1` for local use. Studio and built-in `/api/*` routes do not require authentication. Clerk authentication applies to the custom `/chat` and `/examples/*` routes. Open Studio directly or use the **Mastra Studio** link in the web app; no token exchange is needed.
+
 Select **Agent** in Mastra Studio and try one of these prompts:
 
 - `Get the weather forecast for Austin this weekend.`
