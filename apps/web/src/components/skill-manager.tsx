@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/tanstack-react-start';
-import { fetchUserSkills, mutateUserSkills, type UserSkill } from '#/lib/user-skills';
+import { createUserSkill, deleteUserSkill, fetchUserSkills, setUserSkillActive, updateUserSkill, type UserSkill } from '#/lib/user-skills';
 
 const emptyForm = { name: '', description: '', instructions: '' };
 
@@ -24,22 +24,20 @@ export function SkillManager() {
     const token = await getToken();
     if (!token) return;
     try {
-      await mutateUserSkills(token, editing ? `/custom/user-skills/${editing.id}` : '/custom/user-skills', {
-        method: editing ? 'PATCH' : 'POST', body: JSON.stringify(form),
-      });
+      await (editing ? updateUserSkill(token, editing.id, form) : createUserSkill(token, form));
       setOpen(false); setEditing(null); setForm(emptyForm); setError(''); await load();
     } catch (cause) { setError(cause instanceof Error ? cause.message : '保存できませんでした。'); }
   }
 
   async function toggle(skill: UserSkill) {
     const token = await getToken(); if (!token) return;
-    await mutateUserSkills(token, `/custom/user-skills/${skill.id}/${skill.status === 'active' ? 'deactivate' : 'activate'}`, { method: 'POST' });
+    await setUserSkillActive(token, skill.id, skill.status !== 'active');
     await load();
   }
 
   async function remove(skill: UserSkill) {
     const token = await getToken(); if (!token) return;
-    await mutateUserSkills(token, `/custom/user-skills/${skill.id}`, { method: 'DELETE' });
+    await deleteUserSkill(token, skill.id);
     await load();
   }
 

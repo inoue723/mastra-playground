@@ -2,7 +2,24 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from "./client";
 import { client } from "./client.gen";
-import type { GetExamplesEchoData, GetExamplesEchoResponses } from "./types.gen";
+import type {
+  DeleteCustomUserSkillsByIdData,
+  DeleteCustomUserSkillsByIdResponses,
+  GetCustomUserSkillsByIdData,
+  GetCustomUserSkillsByIdResponses,
+  GetCustomUserSkillsData,
+  GetCustomUserSkillsResponses,
+  GetExamplesEchoData,
+  GetExamplesEchoResponses,
+  PatchCustomUserSkillsByIdData,
+  PatchCustomUserSkillsByIdResponses,
+  PostCustomUserSkillsByIdActivateData,
+  PostCustomUserSkillsByIdActivateResponses,
+  PostCustomUserSkillsByIdDeactivateData,
+  PostCustomUserSkillsByIdDeactivateResponses,
+  PostCustomUserSkillsData,
+  PostCustomUserSkillsResponses,
+} from "./types.gen";
 
 export type Options<
   TData extends TDataShape = TDataShape,
@@ -34,3 +51,102 @@ export const getExamplesEcho = <ThrowOnError extends boolean = false>(
     url: "/examples/echo",
     ...options,
   });
+
+/**
+ * List the caller’s skills
+ *
+ * Returns the authenticated user’s skills, optionally filtered by status.
+ */
+export const getCustomUserSkills = <ThrowOnError extends boolean = false>(
+  options?: Options<GetCustomUserSkillsData, ThrowOnError>,
+): RequestResult<GetCustomUserSkillsResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).get<GetCustomUserSkillsResponses, unknown, ThrowOnError>({
+    url: "/custom/user-skills",
+    ...options,
+  });
+
+/**
+ * Create a skill
+ *
+ * Creates a new skill owned by the authenticated user.
+ */
+export const postCustomUserSkills = <ThrowOnError extends boolean = false>(
+  options: Options<PostCustomUserSkillsData, ThrowOnError>,
+): RequestResult<PostCustomUserSkillsResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<PostCustomUserSkillsResponses, unknown, ThrowOnError>({
+    url: "/custom/user-skills",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete a skill
+ *
+ * Deletes a skill owned by the authenticated user.
+ */
+export const deleteCustomUserSkillsById = <ThrowOnError extends boolean = false>(
+  options: Options<DeleteCustomUserSkillsByIdData, ThrowOnError>,
+): RequestResult<DeleteCustomUserSkillsByIdResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).delete<DeleteCustomUserSkillsByIdResponses, unknown, ThrowOnError>({
+    url: "/custom/user-skills/{id}",
+    ...options,
+  });
+
+/**
+ * Get a skill
+ *
+ * Returns a single skill owned by the authenticated user.
+ */
+export const getCustomUserSkillsById = <ThrowOnError extends boolean = false>(
+  options: Options<GetCustomUserSkillsByIdData, ThrowOnError>,
+): RequestResult<GetCustomUserSkillsByIdResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).get<GetCustomUserSkillsByIdResponses, unknown, ThrowOnError>({
+    url: "/custom/user-skills/{id}",
+    ...options,
+  });
+
+/**
+ * Update a skill
+ *
+ * Updates one or more fields of a skill owned by the authenticated user.
+ */
+export const patchCustomUserSkillsById = <ThrowOnError extends boolean = false>(
+  options: Options<PatchCustomUserSkillsByIdData, ThrowOnError>,
+): RequestResult<PatchCustomUserSkillsByIdResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).patch<PatchCustomUserSkillsByIdResponses, unknown, ThrowOnError>({
+    url: "/custom/user-skills/{id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Activate a skill
+ *
+ * Marks a skill owned by the authenticated user as active.
+ */
+export const postCustomUserSkillsByIdActivate = <ThrowOnError extends boolean = false>(
+  options: Options<PostCustomUserSkillsByIdActivateData, ThrowOnError>,
+): RequestResult<PostCustomUserSkillsByIdActivateResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<PostCustomUserSkillsByIdActivateResponses, unknown, ThrowOnError>(
+    { url: "/custom/user-skills/{id}/activate", ...options },
+  );
+
+/**
+ * Deactivate a skill
+ *
+ * Marks a skill owned by the authenticated user as inactive.
+ */
+export const postCustomUserSkillsByIdDeactivate = <ThrowOnError extends boolean = false>(
+  options: Options<PostCustomUserSkillsByIdDeactivateData, ThrowOnError>,
+): RequestResult<PostCustomUserSkillsByIdDeactivateResponses, unknown, ThrowOnError> =>
+  (options.client ?? client).post<
+    PostCustomUserSkillsByIdDeactivateResponses,
+    unknown,
+    ThrowOnError
+  >({ url: "/custom/user-skills/{id}/deactivate", ...options });

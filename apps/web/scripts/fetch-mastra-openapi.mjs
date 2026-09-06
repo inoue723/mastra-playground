@@ -14,10 +14,14 @@ if (!response.ok) {
   );
 }
 
+const CLIENT_TAGS = ["Examples", "User Skills"];
+
 const fullSpec = await response.json();
 const clientPaths = Object.fromEntries(
   Object.entries(fullSpec.paths).filter(([, pathItem]) =>
-    Object.values(pathItem).some((operation) => operation?.tags?.includes("Examples")),
+    Object.values(pathItem).some((operation) =>
+      operation?.tags?.some((tag) => CLIENT_TAGS.includes(tag)),
+    ),
   ),
 );
 
@@ -32,4 +36,4 @@ await writeFile(fullSpecPath, `${JSON.stringify(fullSpec, null, 2)}\n`);
 await writeFile(clientSpecPath, `${JSON.stringify(clientSpec, null, 2)}\n`);
 
 console.log(`Downloaded ${sourceUrl}`);
-console.log(`Selected ${Object.keys(clientPaths).length} custom route(s) tagged Examples.`);
+console.log(`Selected ${Object.keys(clientPaths).length} custom route(s) tagged ${CLIENT_TAGS.join(", ")}.`);
