@@ -1,8 +1,9 @@
-import type { ReactNode } from "react";
-import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/tanstack-react-start";
+import { useState, type ReactNode } from "react";
+import { Show, SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/tanstack-react-start";
 import { Link } from "@tanstack/react-router";
 
 import type { getChatData } from "#/lib/chat-functions";
+import { getBrowserMastraUrl } from "#/lib/chat";
 
 export type ChatPageData = Awaited<ReturnType<typeof getChatData>>;
 
@@ -35,6 +36,7 @@ export function ChatLayout({ children, data }: { children: ReactNode; data: Chat
           </Show>
           <Show when="signed-in">
             <UserButton />
+            <StudioButton />
           </Show>
         </div>
 
@@ -61,6 +63,36 @@ export function ChatLayout({ children, data }: { children: ReactNode; data: Chat
         {data.connectionError ? <ConnectionError message={data.connectionError} /> : children}
       </section>
     </main>
+  );
+}
+
+function StudioButton() {
+  const { getToken } = useAuth();
+  const [opening, setOpening] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function openStudio() {
+    setOpening(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Your session has expired. Please sign in again.");
+      const url = new URL(getBrowserMastraUrl());
+      url.searchParams.set("auth_header", `Bearer ${token}`);
+      window.location.assign(url.toString());
+    } catch {
+      setError("Could not open Studio. Please sign in again and retry.");
+      setOpening(false);
+    }
+  }
+
+  return (
+    <div>
+      <button className="auth-button" type="button" disabled={opening} onClick={openStudio}>
+        {opening ? "Opening…" : "Mastra Studio"}
+      </button>
+      {error ? <p role="alert">{error}</p> : null}
+    </div>
   );
 }
 

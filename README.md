@@ -21,6 +21,12 @@ Set `OPENAI_API_KEY` in `apps/mastra/.env`, then start both apps:
 pnpm dev
 ```
 
+Start PostgreSQL first:
+
+```sh
+docker compose up -d postgres
+```
+
 - Web: http://localhost:3000
 - Mastra Studio: http://localhost:4111
 - AI SDK chat route: http://localhost:4111/chat
@@ -44,3 +50,7 @@ pnpm format
 Set `MASTRA_API_URL` to the server-side Mastra URL and `VITE_MASTRA_API_URL` to the URL reachable by browsers. Set `WEB_ORIGIN` on the Mastra app to the allowed web origin; multiple origins can be comma-separated.
 
 If production requires a single origin, put a transparent reverse proxy in front of `/chat`. Preserve the upstream response body, streaming headers, and request abort signal, and disable response buffering. Do not parse and reconstruct the AI SDK stream in the proxy.
+
+## Database
+
+The included Docker Compose service runs PostgreSQL for local development. Its default connection string is in `apps/mastra/.env.example` as `DATABASE_URL`. Mastra creates and manages its storage schema in this database.

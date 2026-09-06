@@ -1,7 +1,7 @@
 import { Mastra } from '@mastra/core/mastra';
 import { chatRoute } from '@mastra/ai-sdk';
 import { verifyToken } from '@clerk/backend';
-import { LibSQLStore } from '@mastra/libsql';
+import { PostgresStore } from '@mastra/pg';
 import { DuckDBStore } from '@mastra/duckdb';
 import { MastraCompositeStore } from '@mastra/core/storage';
 import {
@@ -20,9 +20,14 @@ const webOrigins = (process.env.WEB_ORIGIN || 'http://localhost:3000')
   .filter(Boolean);
 
 const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+const databaseUrl = process.env.DATABASE_URL;
 
 if (!clerkSecretKey) {
   throw new Error('CLERK_SECRET_KEY must be set before starting the Mastra server.');
+}
+
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL must be set before starting the Mastra server.');
 }
 
 export const mastra = new Mastra({
@@ -33,10 +38,9 @@ export const mastra = new Mastra({
   tools: { startScheduleTool, stopScheduleTool },
   storage: new MastraCompositeStore({
     id: 'composite-storage',
-    default: new LibSQLStore({
+    default: new PostgresStore({
       id: 'mastra-storage',
-      url: process.env.TURSO_DATABASE_URL || 'file:./mastra.db',
-      authToken: process.env.TURSO_AUTH_TOKEN || undefined,
+      connectionString: databaseUrl,
     }),
     domains: {
       observability: await new DuckDBStore().getStore('observability'),

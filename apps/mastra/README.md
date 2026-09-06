@@ -11,7 +11,7 @@ This starter provides you with a general-purpose Mastra agent that can research 
 - Conversation memory, generated thread titles, and task tracking
 - Built-in web search and direct web page fetching
 - Recurring schedules that persist across restarts
-- Local libSQL storage and DuckDB observability, with optional Turso storage
+- PostgreSQL storage and DuckDB observability
 - A bundled Mastra skill that helps coding agents use current Mastra APIs
 
 ## Get started
@@ -38,7 +38,7 @@ The local filesystem tools stay inside the project-level `workspace/` directory.
 
 ## Storage
 
-The default `file:./mastra.db` database stores agent memory, tasks, and schedules locally. To use Turso, set `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in `.env`.
+PostgreSQL stores agent memory, tasks, and schedules. Start the local database from the repository root with `docker compose up -d postgres`, then set `DATABASE_URL` in `.env` (the value in `.env.example` targets the included local service).
 
 Recurring schedules continue to use model tokens until you pause them. Ask the agent to pause a schedule with the ID returned by `start_schedule`.
 
