@@ -7,6 +7,7 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 
 import { AGENT_ID, PENDING_MESSAGE_PREFIX, getBrowserMastraUrl } from "#/lib/chat";
 import { getThreadTitle } from "#/lib/chat-functions";
+import { fetchUserSkills, type UserSkill } from "#/lib/user-skills";
 
 const TITLE_POLL_ATTEMPTS = 5;
 const TITLE_POLL_INTERVAL_MS = 2000;
@@ -22,6 +23,9 @@ export function ThreadChat({
   const { getToken, userId } = useAuth();
   const getThreadTitleFn = useServerFn(getThreadTitle);
   const [input, setInput] = useState("");
+  const [skills, setSkills] = useState<UserSkill[]>([]);
+  const [selectedSkillId, setSelectedSkillId] = useState("");
+  useEffect(() => { void getToken().then(token => token ? fetchUserSkills(token, "active").then(setSkills).catch(() => undefined) : undefined); }, [getToken]);
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -42,11 +46,12 @@ export function ThreadChat({
                 resource: userId,
                 thread: threadId,
               },
+              ...(selectedSkillId ? { activeSkillId: selectedSkillId } : {}),
             },
           };
         },
       }),
-    [getToken, threadId, userId],
+    [getToken, selectedSkillId, threadId, userId],
   );
   const { error, messages, sendMessage, status, stop } = useChat({
     id: threadId,
@@ -115,6 +120,7 @@ export function ThreadChat({
 
       <div className="composer-wrap">
         {error ? <p className="chat-error">{error.message}</p> : null}
+        <label className="skill-picker">Skill <select disabled={isBusy} value={selectedSkillId} onChange={event => setSelectedSkillId(event.target.value)}><option value="">None (all active skills)</option>{skills.map(skill => <option key={skill.id} value={skill.id}>{skill.name}</option>)}</select></label>
         <form className="composer" onSubmit={handleSubmit}>
           <textarea
             aria-label="Message"

@@ -5,6 +5,7 @@ import { askUserTool, webFetchTool, webSearchTool } from '@mastra/core/tools';
 import { LocalFilesystem, LocalSandbox, WORKSPACE_TOOLS, Workspace } from '@mastra/core/workspace';
 import { Memory } from '@mastra/memory';
 import { startScheduleTool, stopScheduleTool } from '../tools/schedule-tools';
+import { dynamicSkills } from '../skills/dynamic-skills';
 
 const workspacePath = 'workspace';
 
@@ -75,6 +76,7 @@ Keep only information the user explicitly asks you to remember or that is clearl
     },
   }),
   workspace,
+  skills: dynamicSkills,
   tools: {
     ask_user: askUserTool,
     start_schedule: startScheduleTool,

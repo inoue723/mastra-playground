@@ -10,9 +10,10 @@ import {
   SensitiveDataFilter,
 } from '@mastra/observability';
 import { agent } from './agents/agent';
-import { createClerkMiddleware } from './auth/clerk';
+import { combineMiddleware, createClerkMiddleware, createSkillSelectionMiddleware } from './auth/clerk';
 import { echoExampleRoute } from './routes/example-routes';
 import { startScheduleTool, stopScheduleTool } from './tools/schedule-tools';
+import { userSkillRoutes } from './routes/user-skill-routes';
 
 const webOrigins = (process.env.WEB_ORIGIN || 'http://localhost:3000')
   .split(',')
@@ -60,11 +61,14 @@ export const mastra = new Mastra({
   server: {
     host: '127.0.0.1',
     middleware: [
-      { path: '/chat', handler: clerkMiddleware },
+      { path: '/chat', handler: combineMiddleware(clerkMiddleware, createSkillSelectionMiddleware()) },
+      { path: '/custom/user-skills', handler: clerkMiddleware },
+      { path: '/custom/user-skills/*', handler: clerkMiddleware },
       { path: '/examples/*', handler: clerkMiddleware },
     ],
     apiRoutes: [
       echoExampleRoute,
+      ...userSkillRoutes,
       chatRoute({
         path: '/chat',
         agent: 'agent',
