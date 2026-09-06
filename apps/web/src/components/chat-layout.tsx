@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 
 import type { getChatData } from "#/lib/chat-functions";
 import { getBrowserMastraUrl } from "#/lib/chat";
+import { MemoryEditor } from "#/components/memory-editor";
 
 export type ChatPageData = Awaited<ReturnType<typeof getChatData>>;
 
@@ -41,6 +42,8 @@ export function ChatLayout({ children, data }: { children: ReactNode; data: Chat
             </a>
           </Show>
         </div>
+
+        <MemoryEditor />
 
         <nav aria-label="Conversation threads" className="thread-list">
           {data.threads.map((thread) => (

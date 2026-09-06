@@ -82,6 +82,65 @@ p {
   border-color: var(--accent);
   color: white;
 }
+.memory-editor {
+  margin: 0 0 18px;
+  padding: 14px;
+  border: 1px solid #292f39;
+  border-radius: 12px;
+  background: #12161d;
+}
+.memory-editor-heading,
+.memory-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.memory-editor h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.memory-help {
+  margin: 10px 0;
+  color: #7f8998;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.memory-counter,
+.memory-status {
+  color: #697483;
+  font-size: 10px;
+}
+.memory-textarea {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  padding: 10px;
+  resize: vertical;
+  border: 1px solid #303743;
+  border-radius: 8px;
+  outline: 0;
+  color: #dce1e9;
+  background: #0d1117;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.memory-textarea:focus {
+  border-color: #56866d;
+  box-shadow: 0 0 0 3px rgb(86 134 109 / 12%);
+}
+.memory-editor-footer {
+  margin-top: 9px;
+}
+.memory-save-button {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  color: #08110d;
+  background: #82e6b1;
+  font-size: 11px;
+  font-weight: 750;
+}
 .eyebrow {
   margin: 0 0 5px;
   color: #8f9aac;

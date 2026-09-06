@@ -2,6 +2,7 @@ import { auth } from "@clerk/tanstack-react-start/server";
 import { MastraClient } from "@mastra/client-js";
 import { toAISdkMessages } from "@mastra/ai-sdk/ui";
 import { createServerFn } from "@tanstack/react-start";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 
 import { requireUserId } from "./auth";
@@ -14,6 +15,12 @@ const threadInput = z.object({
 const requiredThreadInput = z.object({
   threadId: z.string().min(1),
 });
+
+const memoryInput = z.object({
+  content: z.string().max(20_000),
+});
+
+const USER_MEMORY_THREAD_KIND = "user-memory";
 
 async function createClient() {
   const { getToken } = await auth();
@@ -29,6 +36,33 @@ async function createClient() {
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Mastra server is unavailable.";
+}
+
+async function getUserMemoryThread(client: MastraClient, userId: string) {
+  const existing = await client.listMemoryThreads({
+    agentId: AGENT_ID,
+    resourceId: userId,
+    metadata: { kind: USER_MEMORY_THREAD_KIND },
+    page: 0,
+    perPage: 1,
+  });
+
+  const thread = existing.threads[0];
+  if (thread) return thread.id;
+
+  const stableThreadId = `user-memory-${createHash("sha256")
+    .update(userId)
+    .digest("hex")
+    .slice(0, 32)}`;
+  const created = await client.createMemoryThread({
+    agentId: AGENT_ID,
+    resourceId: userId,
+    threadId: stableThreadId,
+    title: "User memory",
+    metadata: { kind: USER_MEMORY_THREAD_KIND },
+  });
+
+  return created.id;
 }
 
 type SerializableMessagePart = { type: "text"; text: string } | { type: "reasoning"; text: string };
@@ -74,11 +108,13 @@ export const getChatData = createServerFn({ method: "GET" })
         messages: toSerializableMessages(
           toAISdkMessages(storedMessages.messages, { version: "v7" }),
         ),
-        threads: result.threads.map((thread) => ({
-          id: thread.id,
-          title: thread.title,
-          updatedAt: thread.updatedAt,
-        })),
+        threads: result.threads
+          .filter((thread) => thread.metadata?.kind !== USER_MEMORY_THREAD_KIND)
+          .map((thread) => ({
+            id: thread.id,
+            title: thread.title,
+            updatedAt: thread.updatedAt,
+          })),
       };
     } catch (error) {
       return {
@@ -122,4 +158,40 @@ export const getThreadTitle = createServerFn({ method: "GET" })
       .get();
 
     return { title: thread.title };
+  });
+
+export const getUserMemory = createServerFn({ method: "GET" }).handler(async () => {
+  const userId = await requireUserId();
+  const client = await createClient();
+  const threadId = await getUserMemoryThread(client, userId);
+  const result = await client.getWorkingMemory({
+    agentId: AGENT_ID,
+    threadId,
+    resourceId: userId,
+  });
+
+  if (typeof result === "string") return { content: result };
+  if (result && typeof result === "object" && "workingMemory" in result) {
+    const workingMemory = (result as { workingMemory?: unknown }).workingMemory;
+    return { content: typeof workingMemory === "string" ? workingMemory : "" };
+  }
+
+  return { content: "" };
+});
+
+export const updateUserMemory = createServerFn({ method: "POST" })
+  .validator(memoryInput)
+  .handler(async ({ data }) => {
+    const userId = await requireUserId();
+    const client = await createClient();
+    const threadId = await getUserMemoryThread(client, userId);
+
+    await client.updateWorkingMemory({
+      agentId: AGENT_ID,
+      threadId,
+      resourceId: userId,
+      workingMemory: data.content,
+    });
+
+    return { content: data.content };
   });

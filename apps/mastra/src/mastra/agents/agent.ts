@@ -60,6 +60,15 @@ For local file changes, end with a plain-text URL using ${pathToFileURL(`${works
   memory: new Memory({
     options: {
       generateTitle: true,
+      workingMemory: {
+        enabled: true,
+        agentManaged: false,
+        scope: 'resource',
+        template: `# User Memory
+
+Keep only information the user explicitly asks you to remember or that is clearly useful across conversations. This is a free-form note for the user.
+`,
+      },
       observationalMemory: {
         model: 'openai/gpt-5-mini',
       },
