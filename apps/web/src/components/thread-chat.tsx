@@ -7,9 +7,10 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import { code } from "@streamdown/code";
 import { Streamdown } from "streamdown";
 
-import { AGENT_ID, PENDING_MESSAGE_PREFIX, getBrowserMastraUrl } from "#/lib/chat";
+import { AGENT_ID, PENDING_MESSAGE_PREFIX, PENDING_SKILL_PREFIX, getBrowserMastraUrl } from "#/lib/chat";
 import { getThreadTitle } from "#/lib/chat-functions";
-import { fetchUserSkills, type UserSkill } from "#/lib/user-skills";
+import { isSkillActivationPart } from "#/lib/skill-activation";
+import { SkillPicker } from "./skill-picker";
 
 const TITLE_POLL_ATTEMPTS = 5;
 const TITLE_POLL_INTERVAL_MS = 2000;
@@ -25,14 +26,12 @@ export function ThreadChat({
   const { getToken, userId } = useAuth();
   const getThreadTitleFn = useServerFn(getThreadTitle);
   const [input, setInput] = useState("");
-  const [skills, setSkills] = useState<UserSkill[]>([]);
   const [selectedSkillId, setSelectedSkillId] = useState("");
-  useEffect(() => { void getToken().then(token => token ? fetchUserSkills(token, "active").then(setSkills).catch(() => undefined) : undefined); }, [getToken]);
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: `${getBrowserMastraUrl()}/chat`,
-        async prepareSendMessagesRequest({ messages, trigger }) {
+        async prepareSendMessagesRequest({ messages, trigger, body }) {
           const token = await getToken();
           if (!token) throw new Error("Your session has expired. Please sign in again.");
 
@@ -40,6 +39,8 @@ export function ThreadChat({
             trigger === "submit-message" && messages.at(-1)?.role === "user"
               ? messages.slice(-1)
               : messages;
+          // The first message can be sent before the restored selection re-renders.
+          const activeSkillId = body?.activeSkillId ?? selectedSkillId;
           return {
             headers: { Authorization: `Bearer ${token}` },
             body: {
@@ -48,7 +49,7 @@ export function ThreadChat({
                 resource: userId,
                 thread: threadId,
               },
-              ...(selectedSkillId ? { activeSkillId: selectedSkillId } : {}),
+              ...(activeSkillId ? { activeSkillId } : {}),
             },
           };
         },
@@ -84,8 +85,12 @@ export function ThreadChat({
     const pendingMessage = sessionStorage.getItem(storageKey);
     if (!pendingMessage) return;
 
+    const skillKey = `${PENDING_SKILL_PREFIX}${threadId}`;
+    const pendingSkillId = sessionStorage.getItem(skillKey) ?? "";
+    setSelectedSkillId(pendingSkillId);
     sessionStorage.removeItem(storageKey);
-    void sendMessage({ text: pendingMessage });
+    sessionStorage.removeItem(skillKey);
+    void sendMessage({ text: pendingMessage }, { body: { activeSkillId: pendingSkillId } });
   }, [sendMessage, threadId]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -122,7 +127,7 @@ export function ThreadChat({
 
       <div className="composer-wrap">
         {error ? <p className="chat-error">{error.message}</p> : null}
-        <label className="skill-picker">Skill <select disabled={isBusy} value={selectedSkillId} onChange={event => setSelectedSkillId(event.target.value)}><option value="">None (all active skills)</option>{skills.map(skill => <option key={skill.id} value={skill.id}>{skill.name}</option>)}</select></label>
+        <SkillPicker value={selectedSkillId} onChange={setSelectedSkillId} disabled={isBusy} />
         <form className="composer" onSubmit={handleSubmit}>
           <textarea
             aria-label="Message"
@@ -159,6 +164,13 @@ function Message({ message }: { message: UIMessage }) {
       <div className="message-label">{message.role === "assistant" ? AGENT_ID : "You"}</div>
       <div className="message-content">
         {message.parts.map((part, index) => {
+          if (isSkillActivationPart(part)) {
+            return (
+              <div className="skill-activation" key={part.id ?? `${message.id}-${index}`}>
+                <span aria-hidden="true">✓</span> {part.data.name} · 読み込み済み
+              </div>
+            );
+          }
           if (part.type === "text") {
             return (
               <Streamdown key={`${message.id}-${index}`} plugins={{ code }}>

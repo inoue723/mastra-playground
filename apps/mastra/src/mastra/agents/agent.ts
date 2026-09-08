@@ -6,6 +6,7 @@ import { LocalFilesystem, LocalSandbox, WORKSPACE_TOOLS, Workspace } from '@mast
 import { Memory } from '@mastra/memory';
 import { startScheduleTool, stopScheduleTool } from '../tools/schedule-tools';
 import { dynamicSkills } from '../skills/dynamic-skills';
+import { skillActivationProcessor } from '../skills/skill-activation';
 
 const workspacePath = 'workspace';
 
@@ -52,6 +53,8 @@ When the user greets you or does not have a specific task, invite them to try th
 Ask concise questions when something is unclear or a good question could surface a useful insight.
 
 For local file changes, end with a plain-text URL using ${pathToFileURL(`${workspacePath}/`).href}; avoid Markdown links, localhost, /workspace, relative paths, and static-file servers.
+
+Only use a skill when the user has explicitly selected it for the current request. Earlier skill activations in conversation history do not activate a skill for this request.
 `,
   model: 'openai/gpt-5.6-terra',
   defaultOptions: {
@@ -77,6 +80,8 @@ Keep only information the user explicitly asks you to remember or that is clearl
   }),
   workspace,
   skills: dynamicSkills,
+  inputProcessors: [skillActivationProcessor],
+  outputProcessors: [skillActivationProcessor],
   tools: {
     ask_user: askUserTool,
     start_schedule: startScheduleTool,

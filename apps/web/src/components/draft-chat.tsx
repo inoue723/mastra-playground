@@ -2,13 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 
-import { PENDING_MESSAGE_PREFIX } from "#/lib/chat";
+import { PENDING_MESSAGE_PREFIX, PENDING_SKILL_PREFIX } from "#/lib/chat";
 import { createThread } from "#/lib/chat-functions";
+import { SkillPicker } from "./skill-picker";
 
 export function DraftChat() {
   const navigate = useNavigate();
   const createThreadFn = useServerFn(createThread);
   const [input, setInput] = useState("");
+  const [selectedSkillId, setSelectedSkillId] = useState("");
   const [error, setError] = useState<string>();
   const [isCreating, setIsCreating] = useState(false);
 
@@ -22,6 +24,7 @@ export function DraftChat() {
     try {
       const thread = await createThreadFn();
       sessionStorage.setItem(`${PENDING_MESSAGE_PREFIX}${thread.id}`, text);
+      if (selectedSkillId) sessionStorage.setItem(`${PENDING_SKILL_PREFIX}${thread.id}`, selectedSkillId);
       await navigate({
         to: "/threads/$threadId",
         params: { threadId: thread.id },
@@ -54,6 +57,7 @@ export function DraftChat() {
 
       <div className="composer-wrap">
         {error ? <p className="chat-error">{error}</p> : null}
+        <SkillPicker value={selectedSkillId} onChange={setSelectedSkillId} disabled={isCreating} />
         <form className="composer" onSubmit={handleSubmit}>
           <textarea
             aria-label="Message"
